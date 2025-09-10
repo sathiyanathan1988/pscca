@@ -15,7 +15,7 @@
             min-height: 100vh;
             display: flex;
             align-items: center;
-            justify-content: center;
+            
         }
         .container-box {
             background-color: #ffffff;
@@ -85,10 +85,22 @@
         }
     </style>
 </head>
-<body>
+
+<body style="display:flex; flex-direction:column;">
+
+        <header class=" text-black px-4 py-4 flex flex-col sm:flex-row items-center justify-between" style="margin-bottom:100px">
+  <h1 class="text-xl sm:text-2xl font-bold text-center sm:text-left">
+    Presidential School in Bhukara<br class="sm:hidden" />
+    <span class="text-black-300">CCA/ECA Portal</span>
+  </h1>
+  <nav class="mt-3 sm:mt-0">
+    <!-- Optional nav links can go here -->
+  </nav>
+</header>
 
     <!-- Login Page -->
     <div id="login-container" class="container-box max-w-sm">
+        
         <h1 class="text-3xl font-bold text-center text-gray-800 mb-6">Welcome</h1>
         <form id="login-form" class="space-y-4">
             <h2 class="text-xl font-semibold text-gray-700 text-center">Teacher Login</h2>
