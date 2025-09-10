@@ -90,7 +90,7 @@
 
         <header class=" text-black px-4 py-4 flex flex-col sm:flex-row items-center justify-between" style="margin-bottom:100px">
   <h1 class="text-xl sm:text-2xl font-bold text-center sm:text-left">
-    Presidential School in Bhukara<br class="sm:hidden" />
+Presidential School In Bukhara<br class="sm:hidden" />
     <span class="text-black-300">CCA/ECA Portal</span>
   </h1>
   <nav class="mt-3 sm:mt-0">
@@ -101,21 +101,22 @@
     <!-- Login Page -->
     <div id="login-container" class="container-box max-w-sm">
         
-        <h1 class="text-3xl font-bold text-center text-gray-800 mb-6">Welcome</h1>
+        <h1 class="text-3xl font-bold text-center text-gray-800 mb-6">Welcome/
+Xush kelibsiz</h1>
         <form id="login-form" class="space-y-4">
-            <h2 class="text-xl font-semibold text-gray-700 text-center">Teacher Login</h2>
+            <h2 class="text-xl font-semibold text-gray-700 text-center">Teacher Login/O'qituvchi login</h2>
             <div>
-                <label for="username" class="block text-gray-700">Username</label>
+                <label for="username" class="block text-gray-700">Username/Foydalanuvchi nomi</label>
                 <input type="text" id="username" class="form-input" required>
             </div>
             <div>
-                <label for="password" class="block text-gray-700">Password</label>
+                <label for="password" class="block text-gray-700">Password/Parol</label>
                 <input type="password" id="password" class="form-input" required>
             </div>
-            <button type="submit" class="btn-primary w-full">Log In</button>
+            <button type="submit" class="btn-primary w-full">Log In/Tizimga kirish</button>
         </form>
         <div class="text-center mt-6">
-            <button id="student-view-btn" class="btn-secondary w-full">Continue as Student</button>
+            <button id="student-view-btn" class="btn-secondary w-full">Continue as Student/Talaba login</button>
         </div>
     </div>
 
@@ -242,11 +243,11 @@
             appContainer.classList.remove('hidden');
             appContainer.innerHTML = `
                 <div class="space-y-6">
-                    <h1 class="text-3xl font-bold text-center text-gray-800">Teacher Dashboard</h1>
+                    <h1 class="text-3xl font-bold text-center text-gray-800">Teacher Dashboard/O'qituvchi boshqaruv paneli</h1>
                     <div class="flex flex-col sm:flex-row justify-center space-y-2 sm:space-y-0 sm:space-x-4 mb-8">
-                        <button id="view-ccas-btn" class="btn-secondary">Manage CCA</button>
-                        <button id="create-cca-btn" class="btn-primary">Create New CCA/ECA</button>
-                        <button id="logout-btn" class="btn-secondary">Log Out</button>
+                        <button id="view-ccas-btn" class="btn-secondary">Manage CCA/Boshqarish CCA</button>
+                        <button id="create-cca-btn" class="btn-primary">Create New CCA/ECA / Yangi yaratish</button>
+                        <button id="logout-btn" class="btn-secondary">Log Out / Chiqish</button>
                     </div>
                     <div id="teacher-content"></div>
                 </div>
@@ -441,7 +442,7 @@
                 <div class="space-y-6">
                     <h2 class="text-2xl font-semibold text-gray-700">Manage CCA</h2>
                     <div class="mb-4">
-                        <label for="teacher-filter" class="block text-gray-700">Filter by Teacher:</label>
+                        <label for="teacher-filter" class="block text-gray-700">Filter by Teacher / O'qituvchi bo'yicha filtrlash:</label>
                         <select id="teacher-filter" class="form-input">
                             <option value="all">All Teachers</option>
                             ${Array.from(teachers).map(teacherName => `<option value="${teacherName}">${teacherName}</option>`).join('')}
@@ -554,44 +555,45 @@
                 <form id="edit-cca-form" class="space-y-4">
                     <h2 class="text-2xl font-semibold text-gray-700">Edit CCA/ECA: ${cca.clubName}</h2>
                     <div>
-                        <label class="block text-gray-700">Teacher Name</label>
+                        <label class="block text-gray-700">Teacher Name / O'qituvchi nomi</label>
                         <input type="text" id="teacher-name" class="form-input" value="${cca.teacherName}" required>
                     </div>
                     <div>
-                        <label class="block text-gray-700">Activity Club Name</label>
+                        <label class="block text-gray-700">Activity Club Name / Klub nomi</label>
                         <input type="text" id="club-name" class="form-input" value="${cca.clubName}" required>
                     </div>
                     <div>
-                        <label class="block text-gray-700">Preferred Days</label>
+                        <label class="block text-gray-700">Preferred Days/ Afzal kunlar</label>
                         <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
                             <input type="text" id="selected-days-display" class="form-input flex-grow cursor-pointer" readonly placeholder="Tap to select days" value="${selectedDays.join(', ')}" required>
                             <button type="button" id="select-days-btn" class="btn-secondary">Select Days</button>
                         </div>
                     </div>
                     <div>
-                        <label class="block text-gray-700">Preferred Time</label>
+                        <label class="block text-gray-700">Preferred Time / Afzal vaqt
+</label>
                         <input type="text" id="preferred-time" class="form-input" value="${cca.preferredTime}" placeholder="e.g., 3:00 PM - 4:00 PM" required>
                     </div>
                     <div>
-                        <label class="block text-gray-700">Preferred Venue</label>
+                        <label class="block text-gray-700">Preferred Venue / Joy</label>
                         <input type="text" id="preferred-venue" class="form-input" value="${cca.preferredVenue}" required>
                     </div>
                     <div>
-                        <label class="block text-gray-700">Objectives</label>
+                        <label class="block text-gray-700">Objectives / Maqsad</label>
                         <textarea id="objectives" class="form-input h-24" required>${cca.objectives}</textarea>
                     </div>
                     <div>
-                        <label class="block text-gray-700">Specific Activities & Resources</label>
+                        <label class="block text-gray-700">Specific Activities & Resources / Maxsus faoliyat</label>
                         <textarea id="activities" class="form-input h-24" required>${cca.activities}</textarea>
                     </div>
                     <div>
-                        <label class="block text-gray-700">Target Year Group</label>
+                        <label class="block text-gray-700">Target Year Group / Dars darajasi</label>
                         <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
                             <input type="text" id="selected-years-display" class="form-input flex-grow cursor-pointer" readonly placeholder="Tap to select year groups" value="${selectedYears.join(', ')}" required>
                             <button type="button" id="select-years-btn" class="btn-secondary">Select Years</button>
                         </div>
                     </div>
-                    <button type="submit" class="btn-primary w-full">Save Changes</button>
+                    <button type="submit" class="btn-primary w-full">Save Changes / Saqlash</button>
                     <button type="button" id="cancel-edit-btn" class="btn-secondary w-full">Cancel</button>
                 </form>
             `;
