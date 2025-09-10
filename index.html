@@ -1,0 +1,1039 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Presidential School In Bukhara CCA/ECA Portal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #a7f3d0, #bfdbfe, #c4b5fd);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .container-box {
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 2.5rem;
+            max-width: 900px;
+            width: 95%;
+            border: 1px solid #e5e7eb;
+        }
+        .form-input {
+            width: 100%;
+            padding: 0.75rem;
+            border-radius: 8px;
+            border: 1px solid #d1d5db;
+            transition: border-color 0.3s;
+        }
+        .form-input:focus {
+            outline: none;
+            border-color: #2563eb;
+        }
+        .btn-primary {
+            background-color: #2563eb;
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            transition: background-color 0.3s, transform 0.1s;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        .btn-primary:hover {
+            background-color: #1d4ed8;
+            transform: translateY(-1px);
+        }
+        .btn-secondary {
+            background-color: #e5e7eb;
+            color: #4b5563;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            transition: background-color 0.3s, transform 0.1s;
+        }
+        .btn-secondary:hover {
+            background-color: #d1d5db;
+            transform: translateY(-1px);
+        }
+        .message-box {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: white;
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: 0 10px 15px rgba(0, 0, 0, 0.2);
+            z-index: 1000;
+            text-align: center;
+            max-width: 400px;
+            width: 90%;
+        }
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Login Page -->
+    <div id="login-container" class="container-box max-w-sm">
+        <h1 class="text-3xl font-bold text-center text-gray-800 mb-6">Welcome</h1>
+        <form id="login-form" class="space-y-4">
+            <h2 class="text-xl font-semibold text-gray-700 text-center">Teacher Login</h2>
+            <div>
+                <label for="username" class="block text-gray-700">Username</label>
+                <input type="text" id="username" class="form-input" required>
+            </div>
+            <div>
+                <label for="password" class="block text-gray-700">Password</label>
+                <input type="password" id="password" class="form-input" required>
+            </div>
+            <button type="submit" class="btn-primary w-full">Log In</button>
+        </form>
+        <div class="text-center mt-6">
+            <button id="student-view-btn" class="btn-secondary w-full">Continue as Student</button>
+        </div>
+    </div>
+
+    <!-- Main Application Container (Hidden initially) -->
+    <div id="app-container" class="container-box hidden">
+        <!-- Dynamic content will be loaded here -->
+    </div>
+
+    <!-- Message Box for Alerts & Confirmations -->
+    <div id="message-box" class="hidden">
+        <div id="message-overlay" class="overlay"></div>
+        <div class="message-box">
+            <div id="message-content" class="text-gray-700 text-lg mb-4"></div>
+            <div id="message-actions" class="flex gap-4 justify-center">
+                <button id="close-message-btn" class="btn-primary">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase SDKs -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, getDocs, onSnapshot, doc, getDoc, updateDoc, deleteDoc, arrayRemove, arrayUnion, query, where, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Firebase Configuration (from your project)
+        const firebaseConfig = {
+            apiKey: "AIzaSyC39E0Sik-8agVAQGtEtfYGxlWsr_1kmW4",
+            authDomain: "pscca-344cf.firebaseapp.com",
+            projectId: "pscca-344cf",
+            storageBucket: "pscca-344cf.firebasestorage.app",
+            messagingSenderId: "578961842245",
+            appId: "1:578961842245:web:25c99dc2511c91a27d432c",
+            measurementId: "G-M0S8EM4131"
+        };
+        // End of Firebase Config
+
+        const STUDENT_LIMIT = 12;
+
+        let db;
+        let auth;
+        let userId;
+        let selectedDays = [];
+        let selectedYears = [];
+
+        // UI elements
+        const loginContainer = document.getElementById('login-container');
+        const appContainer = document.getElementById('app-container');
+        const messageBox = document.getElementById('message-box');
+        const messageContent = document.getElementById('message-content');
+        const messageActions = document.getElementById('message-actions');
+
+        function showMessage(message) {
+            messageContent.textContent = message;
+            messageActions.innerHTML = `<button id="close-message-btn" class="btn-primary">OK</button>`;
+            document.getElementById('close-message-btn').addEventListener('click', () => {
+                messageBox.classList.add('hidden');
+            });
+            messageBox.classList.remove('hidden');
+        }
+        
+        function showConfirmation(message) {
+            return new Promise((resolve) => {
+                messageContent.textContent = message;
+                messageActions.innerHTML = `
+                    <button id="confirm-yes-btn" class="btn-primary">Yes</button>
+                    <button id="confirm-no-btn" class="btn-secondary">No</button>
+                `;
+                messageBox.classList.remove('hidden');
+
+                document.getElementById('confirm-yes-btn').addEventListener('click', () => {
+                    messageBox.classList.add('hidden');
+                    resolve(true);
+                });
+                document.getElementById('confirm-no-btn').addEventListener('click', () => {
+                    messageBox.classList.add('hidden');
+                    resolve(false);
+                });
+            });
+        }
+
+        function showPasscodePrompt() {
+            return new Promise((resolve) => {
+                messageContent.innerHTML = `<p class="text-gray-700 text-lg mb-4">Enter passcode to confirm:</p>
+                                            <input type="password" id="passcode-input" class="form-input mb-4 text-center">`;
+                messageActions.innerHTML = `
+                    <button id="passcode-submit-btn" class="btn-primary">Submit</button>
+                    <button id="passcode-cancel-btn" class="btn-secondary">Cancel</button>
+                `;
+                messageBox.classList.remove('hidden');
+
+                document.getElementById('passcode-submit-btn').addEventListener('click', () => {
+                    const passcode = document.getElementById('passcode-input').value;
+                    messageBox.classList.add('hidden');
+                    resolve(passcode);
+                });
+                document.getElementById('passcode-cancel-btn').addEventListener('click', () => {
+                    messageBox.classList.add('hidden');
+                    resolve(null);
+                });
+            });
+        }
+
+        function initializeFirebase() {
+            try {
+                if (!db) {
+                    const app = initializeApp(firebaseConfig);
+                    auth = getAuth(app);
+                    db = getFirestore(app);
+                }
+            } catch (error) {
+                console.error("Error initializing Firebase:", error);
+                showMessage("Failed to initialize Firebase. Please check your configuration.");
+            }
+        }
+
+        // Data Access Functions
+        const getPublicCollection = (collectionName) => collection(db, `public/data/${collectionName}`);
+        const getPrivateCollection = (collectionName) => collection(db, `users/${userId}/data/${collectionName}`);
+
+        // View Switching Logic
+        function renderTeachersPage() {
+            loginContainer.classList.add('hidden');
+            appContainer.classList.remove('hidden');
+            appContainer.innerHTML = `
+                <div class="space-y-6">
+                    <h1 class="text-3xl font-bold text-center text-gray-800">Teacher Dashboard</h1>
+                    <div class="flex flex-col sm:flex-row justify-center space-y-2 sm:space-y-0 sm:space-x-4 mb-8">
+                        <button id="view-ccas-btn" class="btn-secondary">Manage CCA</button>
+                        <button id="create-cca-btn" class="btn-primary">Create New CCA/ECA</button>
+                        <button id="logout-btn" class="btn-secondary">Log Out</button>
+                    </div>
+                    <div id="teacher-content"></div>
+                </div>
+            `;
+            document.getElementById('view-ccas-btn').addEventListener('click', () => displayTeacherCCAs('all'));
+            document.getElementById('create-cca-btn').addEventListener('click', displayCcaForm);
+            document.getElementById('logout-btn').addEventListener('click', () => {
+                appContainer.classList.add('hidden');
+                loginContainer.classList.remove('hidden');
+            });
+            displayTeacherCCAs();
+        }
+
+        function renderStudentsPage() {
+            loginContainer.classList.add('hidden');
+            appContainer.classList.remove('hidden');
+            userId = crypto.randomUUID();
+            appContainer.innerHTML = `
+                <div class="space-y-6">
+                    <h1 class="text-3xl font-bold text-center text-gray-800">Student Dashboard</h1>
+                    <div class="flex justify-center mb-8">
+                        <button id="back-to-login-btn" class="btn-secondary">Back to Login</button>
+                    </div>
+                    <div id="student-content"></div>
+                </div>
+            `;
+            document.getElementById('back-to-login-btn').addEventListener('click', () => {
+                appContainer.classList.add('hidden');
+                loginContainer.classList.remove('hidden');
+            });
+            window.displayStudentCCAs();
+        }
+
+        // Teacher Logic
+        function displayCcaForm() {
+            const contentDiv = document.getElementById('teacher-content');
+            selectedDays = [];
+            selectedYears = [];
+
+            contentDiv.innerHTML = `
+                <form id="create-cca-form" class="space-y-4">
+                    <h2 class="text-2xl font-semibold text-gray-700">Create New CCA/ECA</h2>
+                    <div>
+                        <label class="block text-gray-700">Teacher Name</label>
+                        <input type="text" id="teacher-name" class="form-input" required>
+                    </div>
+                    <div>
+                        <label class="block text-gray-700">Activity Club Name</label>
+                        <input type="text" id="club-name" class="form-input" required>
+                    </div>
+                    <div>
+                        <label class="block text-gray-700">Preferred Days</label>
+                        <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
+                            <input type="text" id="selected-days-display" class="form-input flex-grow cursor-pointer" readonly placeholder="Tap to select days" required>
+                            <button type="button" id="select-days-btn" class="btn-secondary">Select Days</button>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-gray-700">Preferred Time</label>
+                        <input type="text" id="preferred-time" class="form-input" placeholder="e.g., 3:00 PM - 4:00 PM" required>
+                    </div>
+                    <div>
+                        <label class="block text-gray-700">Preferred Venue</label>
+                        <input type="text" id="preferred-venue" class="form-input" required>
+                    </div>
+                    <div>
+                        <label class="block text-gray-700">Objectives</label>
+                        <textarea id="objectives" class="form-input h-24" required></textarea>
+                    </div>
+                    <div>
+                        <label class="block text-gray-700">Specific Activities & Resources</label>
+                        <textarea id="activities" class="form-input h-24" required></textarea>
+                    </div>
+                    <div>
+                        <label class="block text-gray-700">Target Year Group</label>
+                        <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
+                            <input type="text" id="selected-years-display" class="form-input flex-grow cursor-pointer" readonly placeholder="Tap to select year groups" required>
+                            <button type="button" id="select-years-btn" class="btn-secondary">Select Years</button>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn-primary w-full">Register CCA/ECA</button>
+                </form>
+            `;
+            document.getElementById('create-cca-form').addEventListener('submit', handleCcaFormSubmit);
+
+            // Open modal for day selection
+            document.getElementById('select-days-btn').addEventListener('click', () => {
+                const options = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+                showSelectionModal('Select Preferred Days', options, selectedDays, (selections) => {
+                    selectedDays = selections;
+                    document.getElementById('selected-days-display').value = selectedDays.join(', ');
+                });
+            });
+
+            // Open modal for year selection
+            document.getElementById('select-years-btn').addEventListener('click', () => {
+                const options = ['Grade 5', 'Grade 6', 'Grade 7', 'Grade 8', 'Grade 9', 'Grade 10', 'Grade 11'];
+                showSelectionModal('Select Target Year Group', options, selectedYears, (selections) => {
+                    selectedYears = selections;
+                    document.getElementById('selected-years-display').value = selectedYears.join(', ');
+                });
+            });
+            
+            // Allow clicking the display input to also open the modal
+            document.getElementById('selected-days-display').addEventListener('click', () => {
+                document.getElementById('select-days-btn').click();
+            });
+            document.getElementById('selected-years-display').addEventListener('click', () => {
+                document.getElementById('select-years-btn').click();
+            });
+        }
+
+        // Generic modal function for multi-selection
+        function showSelectionModal(title, options, currentSelections, onSaveCallback) {
+            const modal = document.createElement('div');
+            modal.classList.add('message-box');
+            modal.innerHTML = `
+                <h3 class="font-semibold text-lg mb-4">${title}</h3>
+                <div class="space-y-2 max-h-60 overflow-y-auto mb-4 text-left">
+                    ${options.map(option => `
+                        <label class="flex items-center gap-2">
+                            <input type="checkbox" value="${option}" class="selection-checkbox" ${currentSelections.includes(option) ? 'checked' : ''}>
+                            <span class="text-gray-700">${option}</span>
+                        </label>
+                    `).join('')}
+                </div>
+                <div class="flex gap-4 justify-center">
+                    <button class="btn-primary" id="save-selections">Save</button>
+                    <button class="btn-secondary" id="cancel-selections">Cancel</button>
+                </div>
+            `;
+            const overlay = document.createElement('div');
+            overlay.classList.add('overlay');
+            document.body.appendChild(overlay);
+            document.body.appendChild(modal);
+            
+            modal.querySelector('#save-selections').addEventListener('click', () => {
+                const checkboxes = modal.querySelectorAll('.selection-checkbox:checked');
+                const newSelections = Array.from(checkboxes).map(cb => cb.value);
+                onSaveCallback(newSelections);
+                modal.remove();
+                overlay.remove();
+            });
+            
+            modal.querySelector('#cancel-selections').addEventListener('click', () => {
+                modal.remove();
+                overlay.remove();
+            });
+        }
+
+        async function handleCcaFormSubmit(e) {
+            e.preventDefault();
+            const form = e.target;
+            
+            if (selectedDays.length === 0 || selectedYears.length === 0) {
+                showMessage("Please select at least one day and one year group.");
+                return;
+            }
+
+            const newCca = {
+                teacherId: userId,
+                teacherName: form['teacher-name'].value,
+                clubName: form['club-name'].value,
+                preferredDays: selectedDays,
+                preferredTime: form['preferred-time'].value,
+                preferredVenue: form['preferred-venue'].value,
+                objectives: form['objectives'].value,
+                activities: form['activities'].value,
+                targetYear: selectedYears,
+                students: []
+            };
+
+            try {
+                await addDoc(getPublicCollection('ccas'), newCca);
+                showMessage("Registration successful!");
+                form.reset();
+                displayTeacherCCAs();
+            } catch (e) {
+                console.error("Error adding document: ", e);
+                showMessage("Failed to register CCA/ECA. Please try again.");
+            }
+        }
+
+        async function displayTeacherCCAs(selectedTeacherId = 'all') {
+            const contentDiv = document.getElementById('teacher-content');
+            contentDiv.innerHTML = '<div class="text-center text-gray-500">Loading your CCA/ECAs...</div>';
+            
+            const teachersSnapshot = await getDocs(getPublicCollection('ccas'));
+            const teachers = new Set(teachersSnapshot.docs.map(doc => doc.data().teacherName));
+
+            contentDiv.innerHTML = `
+                <div class="space-y-6">
+                    <h2 class="text-2xl font-semibold text-gray-700">Manage CCA</h2>
+                    <div class="mb-4">
+                        <label for="teacher-filter" class="block text-gray-700">Filter by Teacher:</label>
+                        <select id="teacher-filter" class="form-input">
+                            <option value="all">All Teachers</option>
+                            ${Array.from(teachers).map(teacherName => `<option value="${teacherName}">${teacherName}</option>`).join('')}
+                        </select>
+                    </div>
+                    <div id="cca-list" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+                </div>
+            `;
+            
+            document.getElementById('teacher-filter').addEventListener('change', (e) => {
+                const filterTeacherName = e.target.value;
+                onSnapshot(getPublicCollection('ccas'), (querySnapshot) => {
+                    const filteredCcas = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })).filter(cca => {
+                        return filterTeacherName === 'all' || cca.teacherName === filterTeacherName;
+                    });
+                    renderCcaList(filteredCcas);
+                });
+            });
+
+            onSnapshot(getPublicCollection('ccas'), (querySnapshot) => {
+                const ccas = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                renderCcaList(ccas);
+            });
+        }
+
+        function renderCcaList(ccas) {
+            const ccaListDiv = document.getElementById('cca-list');
+            if (ccas.length === 0) {
+                ccaListDiv.innerHTML = '<div class="text-center text-gray-500 col-span-2">No CCA/ECAs found for this filter.</div>';
+                return;
+            }
+            ccaListDiv.innerHTML = ccas.map(cca => `
+                <div class="p-6 bg-white rounded-lg shadow-md cursor-pointer hover:bg-gray-50 transition" onclick="window.displayCcaDetailsForTeacher('${cca.id}')">
+                    <h3 class="font-semibold text-xl text-gray-800">${cca.clubName}</h3>
+                    <p class="text-gray-600 mt-1">Teacher: ${cca.teacherName}</p>
+                    <p class="text-sm text-gray-500 mt-2">Target Grade(s): ${Array.isArray(cca.targetYear) ? cca.targetYear.join(', ') : cca.targetYear}</p>
+                    <p class="text-sm text-gray-500">Students: ${cca.students.length} / ${STUDENT_LIMIT}</p>
+                </div>
+            `).join('');
+        }
+
+        window.displayCcaDetailsForTeacher = async (ccaId) => {
+            const contentDiv = document.getElementById('teacher-content');
+            const ccaDoc = await getDoc(doc(getPublicCollection('ccas'), ccaId));
+            const cca = { id: ccaDoc.id, ...ccaDoc.data() };
+            contentDiv.innerHTML = `
+                <h2 class="text-2xl font-bold text-gray-800 mb-4">${cca.clubName}</h2>
+                <div class="mb-6 text-gray-600 space-y-2">
+                    <p><span class="font-semibold">Teacher:</span> ${cca.teacherName}</p>
+                    <p><span class="font-semibold">Venue:</span> ${cca.preferredVenue}</p>
+                    <p><span class="font-semibold">Days/Time:</span> ${Array.isArray(cca.preferredDays) ? cca.preferredDays.join(', ') : cca.preferredDays} at ${cca.preferredTime}</p>
+                    <p><span class="font-semibold">Target Year Group:</span> ${Array.isArray(cca.targetYear) ? cca.targetYear.join(', ') : cca.targetYear}</p>
+                    <div><span class="font-semibold">Objectives:</span> <div style="white-space: pre-wrap;">${cca.objectives}</div></div>
+                    <div><span class="font-semibold">Activities & Resources:</span> <div style="white-space: pre-wrap;">${cca.activities}</div></div>
+                </div>
+
+                <div class="flex gap-4 mb-6">
+                    <button id="edit-cca-btn" class="btn-primary">Edit CCA/ECA</button>
+                    <button id="delete-cca-btn" class="btn-secondary bg-red-500 text-white hover:bg-red-600">Delete CCA/ECA</button>
+                </div>
+
+                <div class="space-y-4">
+                    <h3 class="text-xl font-semibold text-gray-700">Student Roster (${cca.students.length} / ${STUDENT_LIMIT})</h3>
+                    <div id="roster-list" class="space-y-2">
+                        <!-- Roster will be loaded here -->
+                    </div>
+                    <form id="add-student-form" class="space-y-2">
+                        <div class="flex gap-2">
+                             <input type="text" id="new-student-name" class="form-input flex-grow" placeholder="Enter student name" required>
+                            <select id="new-student-grade" class="form-input" required>
+                                <option value="" disabled selected>Select Grade</option>
+                                <option value="Grade 5">Grade 5</option>
+                                <option value="Grade 6">Grade 6</option>
+                                <option value="Grade 7">Grade 7</option>
+                                <option value="Grade 8">Grade 8</option>
+                                <option value="Grade 9">Grade 9</option>
+                                <option value="Grade 10">Grade 10</option>
+                                <option value="Grade 11">Grade 11</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn-primary w-full">Add Student</button>
+                    </form>
+                    <h3 class="text-xl font-semibold text-gray-700">Attendance</h3>
+                    <div id="attendance-section" class="space-y-2">
+                        <input type="date" id="attendance-date" class="form-input w-full">
+                        <button id="mark-attendance-btn" class="btn-primary w-full">Mark Attendance</button>
+                    </div>
+                    <h3 class="text-xl font-semibold text-gray-700">Attendance Report</h3>
+                    <div id="report-section" class="space-y-2">
+                        <button id="show-report-btn" class="btn-secondary w-full">Show Full Report</button>
+                    </div>
+                </div>
+               
+            `;
+            document.getElementById('add-student-form').addEventListener('submit', (e) => handleAddStudent(e, cca.id));
+            document.getElementById('mark-attendance-btn').addEventListener('click', () => handleMarkAttendance(cca.id));
+            document.getElementById('show-report-btn').addEventListener('click', () => displayAttendanceReport(cca.id));
+            document.getElementById('edit-cca-btn').addEventListener('click', () => displayEditCcaForm(cca));
+            document.getElementById('delete-cca-btn').addEventListener('click', () => handleDeleteCca(cca.id));
+            
+            displayRoster(cca.id);
+        }
+        
+        async function displayEditCcaForm(cca) {
+            const contentDiv = document.getElementById('teacher-content');
+            selectedDays = cca.preferredDays;
+            selectedYears = cca.targetYear;
+
+            contentDiv.innerHTML = `
+                <form id="edit-cca-form" class="space-y-4">
+                    <h2 class="text-2xl font-semibold text-gray-700">Edit CCA/ECA: ${cca.clubName}</h2>
+                    <div>
+                        <label class="block text-gray-700">Teacher Name</label>
+                        <input type="text" id="teacher-name" class="form-input" value="${cca.teacherName}" required>
+                    </div>
+                    <div>
+                        <label class="block text-gray-700">Activity Club Name</label>
+                        <input type="text" id="club-name" class="form-input" value="${cca.clubName}" required>
+                    </div>
+                    <div>
+                        <label class="block text-gray-700">Preferred Days</label>
+                        <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
+                            <input type="text" id="selected-days-display" class="form-input flex-grow cursor-pointer" readonly placeholder="Tap to select days" value="${selectedDays.join(', ')}" required>
+                            <button type="button" id="select-days-btn" class="btn-secondary">Select Days</button>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-gray-700">Preferred Time</label>
+                        <input type="text" id="preferred-time" class="form-input" value="${cca.preferredTime}" placeholder="e.g., 3:00 PM - 4:00 PM" required>
+                    </div>
+                    <div>
+                        <label class="block text-gray-700">Preferred Venue</label>
+                        <input type="text" id="preferred-venue" class="form-input" value="${cca.preferredVenue}" required>
+                    </div>
+                    <div>
+                        <label class="block text-gray-700">Objectives</label>
+                        <textarea id="objectives" class="form-input h-24" required>${cca.objectives}</textarea>
+                    </div>
+                    <div>
+                        <label class="block text-gray-700">Specific Activities & Resources</label>
+                        <textarea id="activities" class="form-input h-24" required>${cca.activities}</textarea>
+                    </div>
+                    <div>
+                        <label class="block text-gray-700">Target Year Group</label>
+                        <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
+                            <input type="text" id="selected-years-display" class="form-input flex-grow cursor-pointer" readonly placeholder="Tap to select year groups" value="${selectedYears.join(', ')}" required>
+                            <button type="button" id="select-years-btn" class="btn-secondary">Select Years</button>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn-primary w-full">Save Changes</button>
+                    <button type="button" id="cancel-edit-btn" class="btn-secondary w-full">Cancel</button>
+                </form>
+            `;
+            document.getElementById('edit-cca-form').addEventListener('submit', (e) => handleEditCcaFormSubmit(e, cca.id));
+            document.getElementById('cancel-edit-btn').addEventListener('click', () => window.displayCcaDetailsForTeacher(cca.id));
+
+            document.getElementById('select-days-btn').addEventListener('click', () => {
+                const options = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+                showSelectionModal('Select Preferred Days', options, selectedDays, (selections) => {
+                    selectedDays = selections;
+                    document.getElementById('selected-days-display').value = selectedDays.join(', ');
+                });
+            });
+
+            document.getElementById('select-years-btn').addEventListener('click', () => {
+                const options = ['Grade 5', 'Grade 6', 'Grade 7', 'Grade 8', 'Grade 9', 'Grade 10', 'Grade 11'];
+                showSelectionModal('Select Target Year Group', options, selectedYears, (selections) => {
+                    selectedYears = selections;
+                    document.getElementById('selected-years-display').value = selectedYears.join(', ');
+                });
+            });
+            
+            document.getElementById('selected-days-display').addEventListener('click', () => document.getElementById('select-days-btn').click());
+            document.getElementById('selected-years-display').addEventListener('click', () => document.getElementById('select-years-btn').click());
+        }
+
+        async function handleEditCcaFormSubmit(e, ccaId) {
+            e.preventDefault();
+            const form = e.target;
+            
+            if (selectedDays.length === 0 || selectedYears.length === 0) {
+                showMessage("Please select at least one day and one year group.");
+                return;
+            }
+
+            const updatedCca = {
+                teacherName: form['teacher-name'].value,
+                clubName: form['club-name'].value,
+                preferredDays: selectedDays,
+                preferredTime: form['preferred-time'].value,
+                preferredVenue: form['preferred-venue'].value,
+                objectives: form['objectives'].value,
+                activities: form['activities'].value,
+                targetYear: selectedYears,
+            };
+
+            try {
+                await updateDoc(doc(getPublicCollection('ccas'), ccaId), updatedCca);
+                showMessage("CCA/ECA updated successfully!");
+                window.displayCcaDetailsForTeacher(ccaId);
+            } catch (e) {
+                console.error("Error updating document: ", e);
+                showMessage("Failed to update CCA/ECA. Please try again.");
+            }
+        }
+        
+        async function handleDeleteCca(ccaId) {
+            const passcode = await showPasscodePrompt();
+            if (passcode === '123456') {
+                try {
+                    await deleteDoc(doc(getPublicCollection('ccas'), ccaId));
+                    showMessage("CCA/ECA deleted successfully!");
+                    displayTeacherCCAs();
+                } catch (e) {
+                    console.error("Error deleting document:", e);
+                    showMessage("Failed to delete CCA/ECA. Please try again.");
+                }
+            } else if (passcode !== null) {
+                showMessage("Incorrect passcode.");
+            }
+        }
+
+        async function handleAddStudent(e, ccaId) {
+            e.preventDefault();
+            const form = e.target;
+            const studentName = form['new-student-name'].value.trim();
+            const studentGrade = form['new-student-grade'].value;
+
+            if (!studentName || !studentGrade) {
+                showMessage("Please enter a student's name and grade.");
+                return;
+            }
+
+            const docRef = doc(getPublicCollection('ccas'), ccaId);
+            const ccaDoc = await getDoc(docRef);
+            const ccaData = ccaDoc.data();
+            if (ccaData.students.length >= STUDENT_LIMIT) {
+                showMessage("This CCA/ECA is already at full capacity (12 students).");
+                return;
+            }
+
+            const newStudent = { name: studentName, grade: studentGrade };
+
+            try {
+                await updateDoc(docRef, {
+                    students: arrayUnion(newStudent)
+                });
+                form.reset();
+                showMessage(`${studentName} (${studentGrade}) added to the roster.`);
+            } catch (e) {
+                console.error("Error adding student:", e);
+                showMessage("Failed to add student.");
+            }
+        }
+
+        function displayRoster(ccaId) {
+            const rosterList = document.getElementById('roster-list');
+            const q = query(getPublicCollection('ccas'), where("__name__", "==", ccaId));
+            onSnapshot(q, (querySnapshot) => {
+                querySnapshot.forEach(doc => {
+                    const cca = doc.data();
+                    if (cca && cca.students) {
+                        const studentListHtml = cca.students.map(student => {
+                            const isObject = typeof student === 'object' && student !== null;
+                            const name = isObject ? student.name : student;
+                            const grade = isObject ? ` (${student.grade})` : '';
+                            const studentData = isObject ? JSON.stringify(student) : JSON.stringify({ name: student, grade: '' });
+
+                            return `
+                                <div class="flex items-center justify-between p-3 bg-white rounded-lg shadow-sm">
+                                    <span class="text-gray-700">${name}${grade}</span>
+                                    <button class="text-red-500 hover:text-red-700 font-semibold" onclick="window.handleDeleteStudent('${ccaId}', '${studentData.replace(/"/g, '&quot;')}')">
+                                        Delete
+                                    </button>
+                                </div>
+                            `;
+                        }).join('');
+
+                        rosterList.innerHTML = studentListHtml || '<div class="text-center text-gray-500">No students registered yet.</div>';
+                    }
+                });
+            });
+        }
+        
+        window.handleDeleteStudent = async (ccaId, studentData) => {
+            const studentToDelete = JSON.parse(studentData);
+            const confirmed = await showConfirmation(`Are you sure you want to delete ${studentToDelete.name}${studentToDelete.grade ? ' (' + studentToDelete.grade + ')' : ''}?`);
+            if (confirmed) {
+                try {
+                    const docRef = doc(getPublicCollection('ccas'), ccaId);
+                    await updateDoc(docRef, {
+                        students: arrayRemove(studentToDelete)
+                    });
+                    showMessage(`${studentToDelete.name} removed from the roster.`);
+                } catch (e) {
+                    console.error("Error deleting student:", e);
+                    showMessage("Failed to delete student.");
+                }
+            }
+        };
+
+       async function handleMarkAttendance(ccaId) {
+    const date = document.getElementById('attendance-date').value;
+    if (!date) {
+        showMessage("Please select a date.");
+        return;
+    }
+
+    const docRef = doc(getPublicCollection('ccas'), ccaId);
+    const ccaDoc = await getDoc(docRef);
+    const ccaData = ccaDoc.data();
+    const allStudents = ccaData.students || [];
+
+    const attendanceContainer = document.createElement('div');
+    attendanceContainer.classList.add('message-box');
+    attendanceContainer.innerHTML = `
+        <h3 class="font-semibold text-lg mb-4">Mark Attendance for ${date}</h3>
+        <div class="space-y-2 max-h-60 overflow-y-auto mb-4">
+            ${allStudents.length > 0 ?
+                allStudents.map(student => `
+                    <label class="flex items-center gap-2">
+                        <input type="checkbox" checked class="student-attendance-checkbox" data-student-name="${typeof student === 'object' ? student.name : student}">
+                        ${typeof student === 'object' ? `${student.name} (${student.grade})` : student}
+                    </label>
+                `).join('') :
+                '<div>No students to mark attendance for.</div>'
+            }
+        </div>
+        <div class="flex gap-2 justify-center">
+            <button id="save-attendance-btn" class="btn-primary">Save</button>
+            <button id="cancel-attendance-btn" class="btn-secondary">Cancel</button>
+        </div>
+    `;
+    const overlay = document.createElement('div');
+    overlay.classList.add('overlay');
+    document.body.appendChild(overlay);
+    document.body.appendChild(attendanceContainer);
+
+    attendanceContainer.querySelector('#cancel-attendance-btn').addEventListener('click', () => {
+        attendanceContainer.remove();
+        overlay.remove();
+    });
+
+    attendanceContainer.querySelector('#save-attendance-btn').addEventListener('click', async () => {
+        const checkboxes = attendanceContainer.querySelectorAll('.student-attendance-checkbox');
+        const presentList = Array.from(checkboxes).filter(cb => cb.checked).map(cb => cb.dataset.studentName);
+        const absentList = Array.from(checkboxes).filter(cb => !cb.checked).map(cb => cb.dataset.studentName);
+
+        const attendanceRecord = {
+            ccaId: ccaId,
+            date: date,
+            present: presentList,
+            absent: absentList,
+        };
+        try {
+            // Use Firestore root level attendance collection
+            const attendanceCol = collection(db, 'attendance');
+            const q = query(attendanceCol, where("ccaId", "==", ccaId), where("date", "==", date));
+            const querySnapshot = await getDocs(q);
+            if (!querySnapshot.empty) {
+                const existingDoc = querySnapshot.docs[0];
+                await updateDoc(doc(db, 'attendance', existingDoc.id), attendanceRecord);
+                showMessage("Attendance updated for this date.");
+            } else {
+                await addDoc(attendanceCol, attendanceRecord);
+                showMessage("Attendance saved successfully!");
+            }
+        } catch (e) {
+            console.error("Error saving attendance:", e);
+            showMessage("Failed to save attendance.");
+        } finally {
+            attendanceContainer.remove();
+            overlay.remove();
+        }
+    });
+}
+
+      function displayAttendanceReport(ccaId) {
+    const contentDiv = document.getElementById('report-section');
+    contentDiv.innerHTML = '<div class="text-center text-gray-500">Loading report...</div>';
+
+    const attendanceCol = collection(db, 'attendance'); // fixed here
+    const q = query(attendanceCol, where("ccaId", "==", ccaId));
+
+    onSnapshot(q, (querySnapshot) => {
+        const records = [];
+        querySnapshot.forEach(doc => records.push(doc.data()));
+
+        if (records.length === 0) {
+            contentDiv.innerHTML = '<div class="text-center text-gray-500">No attendance records found.</div>';
+            return;
+        }
+
+        const reportHTML = records.map(record => `
+            <div class="p-4 bg-white rounded-lg shadow-sm">
+                <h4 class="font-semibold text-gray-700">Date: ${record.date}</h4>
+                <p class="text-sm text-gray-600 mt-2"><span class="font-semibold">Present:</span> ${record.present.join(', ') || 'N/A'}</p>
+                <p class="text-sm text-gray-600"><span class="font-semibold">Absent:</span> ${record.absent.join(', ') || 'N/A'}</p>
+            </div>
+        `).join('');
+
+        contentDiv.innerHTML = `
+            <h3 class="text-lg font-semibold text-gray-700 mb-2">Consolidated Attendance Report</h3>
+            <div class="space-y-4 max-h-96 overflow-y-auto">
+                ${reportHTML}
+            </div>
+        `;
+    });
+}
+
+        // Student Logic
+       let allCcaData = [];  // Global variable to hold all CCAs fetched
+
+window.displayStudentCCAs = function() {
+    const contentDiv = document.getElementById('student-content');
+    
+    contentDiv.innerHTML = `
+        <h2 class="text-2xl font-semibold text-gray-700 mb-4">Available CCA/ECAs</h2>
+        <div class="mb-4">
+            <label for="student-grade-filter" class="block text-gray-700">Filter by Grade:</label>
+            <select id="student-grade-filter" class="form-input rounded border-gray-300 px-3 py-2 w-full max-w-xs">
+                <option value="all">All Grades</option>
+                <option value="Grade 5">Grade 5</option>
+                <option value="Grade 6">Grade 6</option>
+                <option value="Grade 7">Grade 7</option>
+                <option value="Grade 8">Grade 8</option>
+                <option value="Grade 9">Grade 9</option>
+                <option value="Grade 10">Grade 10</option>
+                <option value="Grade 11">Grade 11</option>
+            </select>
+        </div>
+        <div id="cca-list" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="text-center text-gray-500 col-span-2">Loading available CCA/ECAs...</div>
+        </div>
+        <div id="report-section" class="mt-6"></div>
+    `;
+
+    // Fetch all CCAs once
+    const ccasQuery = query(getPublicCollection('ccas'));
+    onSnapshot(ccasQuery, (querySnapshot) => {
+        allCcaData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        renderStudentCcaList(allCcaData);
+    });
+
+    // Listen for grade filter changes
+    const studentGradeFilter = document.getElementById('student-grade-filter');
+    studentGradeFilter.addEventListener('change', (e) => {
+        const filterValue = e.target.value;
+        let filteredCcas = [];
+        if (filterValue === 'all') {
+            filteredCcas = allCcaData;
+        } else {
+            filteredCcas = allCcaData.filter(cca => 
+                Array.isArray(cca.targetYear) && cca.targetYear.includes(filterValue)
+            );
+        }
+        renderStudentCcaList(filteredCcas);
+
+        // Clear attendance report when filter changes
+        const reportSection = document.getElementById('report-section');
+        if (reportSection) reportSection.innerHTML = '';
+    });
+};
+
+function renderStudentCcaList(ccas) {
+    const ccaListDiv = document.getElementById('cca-list');
+    if (!ccaListDiv) return;
+
+    if (ccas.length === 0) {
+        ccaListDiv.innerHTML = '<div class="text-center text-gray-500 col-span-2">No CCA/ECAs found.</div>';
+        return;
+    }
+
+    ccaListDiv.innerHTML = ccas.map(cca => `
+        <div class="p-6 bg-white rounded-lg shadow-md hover:bg-gray-50 transition">
+            <h3 class="font-semibold text-xl text-gray-800">${cca.clubName || 'Unnamed CCA'}</h3>
+            <p class="text-gray-600 mt-1">Teacher: ${cca.teacherName || 'N/A'}</p>
+            <p class="text-sm text-gray-500 mt-2">Target Grade(s): ${Array.isArray(cca.targetYear) ? cca.targetYear.join(', ') : cca.targetYear || 'N/A'}</p>
+            <p class="text-sm text-gray-500">Students: ${Array.isArray(cca.students) ? cca.students.length : 0} / ${typeof STUDENT_LIMIT !== 'undefined' ? STUDENT_LIMIT : 'N/A'}</p>
+            <div class="mt-4 flex gap-2">
+                
+                <button 
+                    class="btn-secondary px-4 py-2 rounded bg-gray-300 hover:bg-gray-400 transition"
+                    onclick="window.displayStudentCcaDetails && window.displayStudentCcaDetails('${cca.id}')"
+                    type="button"
+                >
+                    Details
+                </button>
+            </div>
+        </div>
+    `).join('');
+}
+
+
+        window.displayStudentCcaDetails = async (ccaId) => {
+            const contentDiv = document.getElementById('student-content');
+            const ccaDoc = await getDoc(doc(getPublicCollection('ccas'), ccaId));
+            if (!ccaDoc.exists()) {
+                showMessage("CCA/ECA not found.");
+                return;
+            }
+            const cca = ccaDoc.data();
+            const isFull = cca.students.length >= STUDENT_LIMIT;
+            const registrationButton = isFull 
+                ? `<button class="btn-primary w-full cursor-not-allowed opacity-50" disabled>Registration Full</button>`
+                : `<button type="submit" class="btn-primary w-full">Register Now</button>`;
+            
+            contentDiv.innerHTML = `
+                <h2 class="text-2xl font-bold text-gray-800 mb-4">${cca.clubName}</h2>
+                <div class="mb-6 text-gray-600 space-y-2">
+                    <p><span class="font-semibold">Teacher:</span> ${cca.teacherName}</p>
+                    <p><span class="font-semibold">Venue:</span> ${cca.preferredVenue}</p>
+                    <p><span class="font-semibold">Days/Time:</span> ${Array.isArray(cca.preferredDays) ? cca.preferredDays.join(', ') : cca.preferredDays} at ${cca.preferredTime}</p>
+                    <p><span class="font-semibold">Target Year Group:</span> ${Array.isArray(cca.targetYear) ? cca.targetYear.join(', ') : cca.targetYear}</p>
+                    <p><span class="font-semibold">Students:</span> ${cca.students.length} / ${STUDENT_LIMIT}</p>
+                    <div><span class="font-semibold">Objectives:</span> <div style="white-space: pre-wrap;">${cca.objectives}</div></div>
+                    <div><span class="font-semibold">Activities:</span> <div style="white-space: pre-wrap;">${cca.activities}</div></div>
+                </div>
+                <form id="student-register-form" class="space-y-4 p-6 bg-gray-50 rounded-lg">
+                    <h3 class="text-xl font-semibold text-gray-700">Register for this CCA/ECA</h3>
+                    <div>
+                        <label class="block text-gray-700">Your Full Name</label>
+                        <input type="text" id="student-name" class="form-input" required>
+                    </div>
+                    <div>
+                        <label class="block text-gray-700">Your Grade Level</label>
+                        <select id="student-grade" class="form-input" required>
+                            <option value="">Select Grade</option>
+                            <option value="Grade 5">Grade 5</option>
+                            <option value="Grade 6">Grade 6</option>
+                            <option value="Grade 7">Grade 7</option>
+                            <option value="Grade 8">Grade 8</option>
+                            <option value="Grade 9">Grade 9</option>
+                            <option value="Grade 10">Grade 10</option>
+                            <option value="Grade 11">Grade 11</option>
+                        </select>
+                    </div>
+                    ${registrationButton}
+                </form>
+                <button onclick="window.displayStudentCCAs()" class="btn-secondary mt-6">Back to all CCA/ECAs</button>
+            `;
+            if (!isFull) {
+                document.getElementById('student-register-form').addEventListener('submit', (e) => handleStudentRegistration(e, ccaId, cca.clubName));
+            }
+        };
+
+        async function handleStudentRegistration(e, ccaId, ccaName) {
+            e.preventDefault();
+            const form = e.target;
+            const studentName = form['student-name'].value;
+            const studentGrade = form['student-grade'].value;
+            
+            if (!studentName || !studentGrade) {
+                showMessage("Please fill in all fields.");
+                return;
+            }
+
+            try {
+                const docRef = doc(getPublicCollection('ccas'), ccaId);
+                const ccaDoc = await getDoc(docRef);
+                const ccaData = ccaDoc.data();
+                if (ccaData.students.length >= STUDENT_LIMIT) {
+                     showMessage("This CCA/ECA is already at full capacity (12 students).");
+                    return;
+                }
+
+                const studentData = { name: studentName, grade: studentGrade };
+                await updateDoc(docRef, {
+                    students: arrayUnion(studentData)
+                });
+                
+                showMessage(`You have successfully registered for ${ccaName}!`);
+                form.reset();
+                window.displayStudentCCAs();
+            } catch (e) {
+                console.error("Error registering student:", e);
+                showMessage("Failed to register. Please try again.");
+            }
+        }
+
+        // Initial Load and Login Logic
+        window.onload = async () => {
+            initializeFirebase();
+            
+            const loginForm = document.getElementById('login-form');
+            const studentViewBtn = document.getElementById('student-view-btn');
+
+            loginForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const username = e.target['username'].value;
+                const password = e.target['password'];
+                
+                if (username === 'teacher' && password.value === 'teacherps') {
+                    userId = 'teacher-123'; // Hardcoded ID for the teacher
+                    renderTeachersPage();
+                } else {
+                    showMessage("Invalid username or password.");
+                }
+            });
+
+            studentViewBtn.addEventListener('click', () => {
+                renderStudentsPage();
+            });
+        };
+    </script>
+</body>
+</html>
