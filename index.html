@@ -154,7 +154,7 @@ Xush kelibsiz</h1>
         };
         // End of Firebase Config
 
-        const STUDENT_LIMIT = 12;
+        const STUDENT_LIMIT = 30;
 
         let db;
         let auth;
@@ -1006,7 +1006,7 @@ function renderStudentCcaList(ccas) {
                 const ccaDoc = await getDoc(docRef);
                 const ccaData = ccaDoc.data();
                 if (ccaData.students.length >= STUDENT_LIMIT) {
-                     showMessage("This CCA/ECA is already at full capacity (12 students).");
+                     showMessage("This CCA/ECA is already at full capacity.");
                     return;
                 }
 
@@ -1051,3 +1051,4 @@ function renderStudentCcaList(ccas) {
     </script>
 </body>
 </html>
+
